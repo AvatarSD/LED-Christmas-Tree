@@ -8,16 +8,34 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "ADC/Analog.h"
+#include "UART/UART.h"
 
-uint16_t counter = 0;
+#define  MAX_VAL 5000
+
+UART * _port;
+
+ISR(USART_RX_vect)
+{
+	_port->rx_byte_int();
+}
+ISR(USART_TX_vect)
+{
+	_port->tx_byte_int();
+}
+
+uint8_t counter = 0;
 
 // Timer1 input capture interrupt service routine
 ISR(TIMER1_CAPT_vect)
 {
 // Place your code here
-counter++;
+	cli();
+	counter++;
+	if(counter>=MAX_VAL)counter = 0;
+	sei();
 }
 
 inline void setOutA(uint16_t pwm)
@@ -37,15 +55,18 @@ inline void setOutC(uint16_t pwm)
 
 void calcPhase(uint16_t value, uint16_t level)
 {
-	double lev = ((double) level * 2 / (sizeof(level) * 8)) - 1;
+//	double lev = ((double) level * 2 / (sizeof(level) * 8)) - 1;
+//
+//	setOutA((sin((value * M_PI) / (sizeof(value) * 8)) + lev)
+//			/ (2 * (sizeof(value) * 8)));
+//	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + M_PI / 3) + lev)
+//			/ (2 * (sizeof(value) * 8)));
+//	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + (2 * M_PI) / 3)
+//			+ lev) / (2 * (sizeof(value) * 8)));
 
-	setOutA((sin((value * M_PI) / (sizeof(value) * 8)) + lev)
-			/ (2 * (sizeof(value) * 8)));
-	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + M_PI / 3) + lev)
-			/ (2 * (sizeof(value) * 8)));
-	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + (2 * M_PI) / 3)
-			+ lev) / (2 * (sizeof(value) * 8)));
-
+	setOutA((sin(((double) value * M_PI) / 0xffff) + 1) * 0xffff);
+	setOutB(counter);
+	setOutC(value);
 }
 
 void init()
@@ -197,13 +218,22 @@ int main()
 {
 	init();
 
+	UART port(UDR0,115200, 128,8);
+	_port = &port;
+
+	char buff[150];
+
 	while (true)
 	{
-		//ICR1 = analog[0]*64;
-		calcPhase(analog[0]*64/*counter*/, analog[1]*64);
+		ICR1 = analog[0] * 64;
+		calcPhase(analog[0] * 64, analog[1] * 64);
 //		setOutA(0x4fff);//analog[0]*64);
 //		setOutB(0x7fff);//analog[1]*64);
 //		setOutC(analog[0]*64);
+		sprintf(buff,
+				"ICR: %ud, cont: %ud, ang0: %ud, ang1: %ud, A: %ud, B: %ud, C: %ud\r\n",
+				ICR1, counter, analog[0], analog[1], OCR0A, OCR0B, OCR2B);
+		port(buff);
 	}
 	return 0;
 }

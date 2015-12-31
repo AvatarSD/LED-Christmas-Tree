@@ -39,6 +39,9 @@
 							</tool>
 							<tool id="de.innot.avreclipse.tool.linker.winavr.app.release.674453640" name="AVR C Linker" superClass="de.innot.avreclipse.tool.linker.winavr.app.release"/>
 							<tool id="de.innot.avreclipse.tool.cpplinker.app.release.485377431" name="AVR C++ Linker" superClass="de.innot.avreclipse.tool.cpplinker.app.release">
+								<option id="de.innot.avreclipse.cpplinker.option.libs.204810272" superClass="de.innot.avreclipse.cpplinker.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="m"/>
+								</option>
 								<inputType id="de.innot.avreclipse.tool.cpplinker.input.41316417" name="OBJ Files" superClass="de.innot.avreclipse.tool.cpplinker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
