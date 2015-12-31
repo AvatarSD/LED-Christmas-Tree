@@ -55,7 +55,8 @@ inline void setOutC(uint8_t pwm)
 
 void calcPhase(uint8_t value, uint8_t level)
 {
-	double lev = ((double) level * 2 / (sizeof(level) * 8)) - 1;
+	double levMinus = (0xFF - (double) level) / 0x7f;
+	double levMultip = 0xff / level;
 //
 //	setOutA((sin((value * M_PI) / (sizeof(value) * 8)) + lev)
 //			/ (2 * (sizeof(value) * 8)));
@@ -64,9 +65,15 @@ void calcPhase(uint8_t value, uint8_t level)
 //	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + (2 * M_PI) / 3)
 //			+ lev) / (2 * (sizeof(value) * 8)));
 
-	setOutA((sin((((double) value * M_PI * 2) / 0xff)) + 1) * 0x7f);
-	setOutB((sin((((double) value * M_PI * 2) / 0xff) + M_PI / 3) + 1) * 0x7f);
-	setOutC((sin((((double) value * M_PI * 2) / 0xff) + 2 * M_PI / 3) + 1) * 0x7f);
+	setOutA(
+			(sin((((double) value * M_PI * 2) / 0xff)) + 1 - levMinus)
+					* levMultip * 0x7f);
+	setOutB(
+			(sin((((double) value * M_PI * 2) / 0xff) + M_PI / 3) + 1 - levMinus)
+					* levMultip * 0x7f);
+	setOutC(
+			(sin((((double) value * M_PI * 2) / 0xff) + 2 * M_PI / 3) + 1
+					- levMinus) * levMultip * 0x7f);
 //	setOutB(counter);
 //	setOutC(value);
 }
@@ -233,9 +240,7 @@ int main()
 		ICR1 = tim;
 
 		calcPhase(counter, analog[1] / 4);
-//		setOutA(0x4fff);//analog[0]*64);
-//		setOutB(0x7fff);//analog[1]*64);
-//		setOutC(analog[0]*64);
+
 		sprintf(buff,
 				"ICR: %u,\t cont: %u,\t ang0: %u, ang1: %u, A: %u, B: %u, C: %u\r\n",
 				ICR1, counter, analog[0] / 4, analog[1] / 4, OCR0A, OCR0B,
