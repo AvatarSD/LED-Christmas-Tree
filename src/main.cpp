@@ -57,25 +57,24 @@ void calcPhase(uint8_t value, uint8_t level)
 {
 	double levMinus = (0xFF - (double) level) / 0x7f;
 	double levMultip = 0xff / level;
-//
-//	setOutA((sin((value * M_PI) / (sizeof(value) * 8)) + lev)
-//			/ (2 * (sizeof(value) * 8)));
-//	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + M_PI / 3) + lev)
-//			/ (2 * (sizeof(value) * 8)));
-//	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + (2 * M_PI) / 3)
-//			+ lev) / (2 * (sizeof(value) * 8)));
 
-	setOutA(
-			(sin((((double) value * M_PI * 2) / 0xff)) + 1 - levMinus)
-					* levMultip * 0x7f);
-	setOutB(
-			(sin((((double) value * M_PI * 2) / 0xff) + M_PI / 3) + 1 - levMinus)
-					* levMultip * 0x7f);
-	setOutC(
-			(sin((((double) value * M_PI * 2) / 0xff) + 2 * M_PI / 3) + 1
-					- levMinus) * levMultip * 0x7f);
-//	setOutB(counter);
-//	setOutC(value);
+	double cutterA = sin((((double) value * M_PI * 2) / 0xff)) + 1 - levMinus;
+	double cutterB = sin((((double) value * M_PI * 2) / 0xff) + 2 * M_PI / 3)
+			+ 1 - levMinus;
+	double cutterC = sin((((double) value * M_PI * 2) / 0xff) + 4 * M_PI / 3)
+			+ 1 - levMinus;
+
+	if (cutterA < 0)
+		cutterA = 0;
+	if (cutterB < 0)
+		cutterB = 0;
+	if (cutterC < 0)
+		cutterC = 0;
+
+	setOutA(cutterA * levMultip * 0x7f);
+	setOutB(cutterB * levMultip * 0x7f);
+	setOutC(cutterC * levMultip * 0x7f);
+
 }
 
 void init()
