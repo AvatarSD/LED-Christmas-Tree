@@ -13,7 +13,6 @@
 #include "ADC/Analog.h"
 #include "UART/UART.h"
 
-#define MIN_TIMER 30
 #define USE_SERIAL 0
 
 #if USE_SERIAL
@@ -28,42 +27,33 @@ ISR(USART_TX_vect)
 }
 #endif
 
-uint8_t counter = 0;
+register uint16_t counter asm("r4") ;
 
-// Timer1 input capture interrupt service routine
-ISR(TIMER1_CAPT_vect)
+
+inline void setOutA(uint16_t pwm)
 {
-// Place your code here
-	cli();
-	counter++;
-	//if(counter>=MAX_VAL)counter = 0;
-	sei();
+	OCR0A = pwm/0xff;
 }
 
-inline void setOutA(uint8_t pwm)
+inline void setOutB(uint16_t pwm)
 {
-	OCR0A = pwm;
+	OCR0B = pwm/0xff;
 }
 
-inline void setOutB(uint8_t pwm)
+inline void setOutC(uint16_t pwm)
 {
-	OCR0B = pwm;
+	OCR2B = pwm/0xff;
 }
 
-inline void setOutC(uint8_t pwm)
+void calcPhase(uint16_t value, uint16_t level)
 {
-	OCR2B = pwm;
-}
+	double levMinus = (0xFFFF - (double) level) / 0x7fFF;
+	double levMultip = 0xFFFF / level;
 
-void calcPhase(uint8_t value, uint8_t level)
-{
-	double levMinus = (0xFF - (double) level) / 0x7f;
-	double levMultip = 0xff / level;
-
-	double cutterA = sin((((double) value * M_PI * 2) / 0xff)) + 1 - levMinus;
-	double cutterB = sin((((double) value * M_PI * 2) / 0xff) + 2 * M_PI / 3)
+	double cutterA = sin((((double) value * M_PI * 2) / 0xffFF)) + 1 - levMinus;
+	double cutterB = sin((((double) value * M_PI * 2) / 0xffFF) + 2 * M_PI / 3)
 			+ 1 - levMinus;
-	double cutterC = sin((((double) value * M_PI * 2) / 0xff) + 4 * M_PI / 3)
+	double cutterC = sin((((double) value * M_PI * 2) / 0xffFF) + 4 * M_PI / 3)
 			+ 1 - levMinus;
 
 	if (cutterA < 0)
@@ -73,9 +63,9 @@ void calcPhase(uint8_t value, uint8_t level)
 	if (cutterC < 0)
 		cutterC = 0;
 
-	setOutA(cutterA * levMultip * 0x7f);
-	setOutB(cutterB * levMultip * 0x7f);
-	setOutC(cutterC * levMultip * 0x7f);
+	setOutA(cutterA * levMultip * 0x7fFF);
+	setOutB(cutterB * levMultip * 0x7FFf);
+	setOutC(cutterC * levMultip * 0x7fFF);
 
 }
 
@@ -171,7 +161,7 @@ void init()
 	TIMSK0 = (0 << OCIE0B) | (0 << OCIE0A) | (0 << TOIE0);
 
 	// Timer/Counter 1 Interrupt(s) initialization
-	TIMSK1 = (1 << ICIE1) | (0 << OCIE1B) | (0 << OCIE1A) | (0 << TOIE1);
+//	TIMSK1 = (1 << ICIE1) | (0 << OCIE1B) | (0 << OCIE1A) | (0 << TOIE1);
 
 	// Timer/Counter 2 Interrupt(s) initialization
 	TIMSK2 = (0 << OCIE2B) | (0 << OCIE2A) | (0 << TOIE2);
@@ -236,12 +226,12 @@ int main()
 
 	while (true)
 	{
-		uint16_t tim = 0x3ff / analog[0];
-		if (tim < MIN_TIMER)
-			tim = MIN_TIMER;
-		ICR1 = tim;
 
-		calcPhase(counter, analog[1] / 4);
+		uint16_t MAX_COUNTER = 0x1fff - (analog[0]*8);
+
+		calcPhase((uint16_t)(((uint32_t)counter*0xffff)/MAX_COUNTER), analog[1] * 64);
+		if(counter++ >= MAX_COUNTER) counter = 0;
+
 
 #if USE_SERIAL
 		sprintf(buff,
