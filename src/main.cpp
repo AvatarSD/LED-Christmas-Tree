@@ -105,10 +105,10 @@ void init()
 
 	// Port D initialization
 	// Function: Bit7=In Bit6=Out Bit5=Out Bit4=In Bit3=Out Bit2=In Bit1=In Bit0=In
-	DDRD = (1 << DDD7) | (1 << DDD6) | (1 << DDD5) | (0 << DDD4) | (1 << DDD3)
+	DDRD = (0 << DDD7) | (1 << DDD6) | (1 << DDD5) | (0 << DDD4) | (1 << DDD3)
 			| (0 << DDD2) | (0 << DDD1) | (0 << DDD0);
 	// State: Bit7=T Bit6=0 Bit5=0 Bit4=T Bit3=0 Bit2=T Bit1=T Bit0=T
-	PORTD = (0 << PORTD7) | (0 << PORTD6) | (0 << PORTD5) | (0 << PORTD4)
+	PORTD = (1 << PORTD7) | (0 << PORTD6) | (0 << PORTD5) | (0 << PORTD4)
 			| (0 << PORTD3) | (0 << PORTD2) | (0 << PORTD1) | (0 << PORTD0);
 
 	// Timer/Counter 0 initialization
@@ -121,7 +121,7 @@ void init()
 	// Output Pulse(s):
 	// OC0A Period: 0,128 ms Width: 0,063749 ms
 	// OC0B Period: 0,128 ms Width: 0,063749 ms
-	TCCR0A = (1 << COM0A1) | (0 << COM0A0) | (1 << COM0B1) | (0 << COM0B0)
+	TCCR0A = (1 << COM0A1) | (1 << COM0A0) | (1 << COM0B1) | (1 << COM0B0)
 			| (1 << WGM01) | (1 << WGM00);
 	TCCR0B = (0 << WGM02) | (0 << CS02) | (1 << CS01) | (0 << CS00);
 	TCNT0 = 0x00;
@@ -165,7 +165,7 @@ void init()
 	// OC2A Period: 0,128 ms Width: 0,063749 ms
 	// OC2B Period: 0,128 ms Width: 0,063749 ms
 	ASSR = (0 << EXCLK) | (0 << AS2);
-	TCCR2A = (1 << COM2A1) | (0 << COM2A0) | (1 << COM2B1) | (0 << COM2B0)
+	TCCR2A = (1 << COM2A1) | (1 << COM2A0) | (1 << COM2B1) | (1 << COM2B0)
 			| (1 << WGM21) | (1 << WGM20);
 	TCCR2B = (0 << WGM22) | (0 << CS22) | (1 << CS21) | (0 << CS20);
 	TCNT2 = 0x00;
@@ -176,7 +176,7 @@ void init()
 	TIMSK0 = (0 << OCIE0B) | (0 << OCIE0A) | (0 << TOIE0);
 
 	// Timer/Counter 1 Interrupt(s) initialization
-//	TIMSK1 = (1 << ICIE1) | (0 << OCIE1B) | (0 << OCIE1A) | (0 << TOIE1);
+	TIMSK1 = (0 << ICIE1) | (0 << OCIE1B) | (0 << OCIE1A) | (0 << TOIE1);
 
 	// Timer/Counter 2 Interrupt(s) initialization
 	TIMSK2 = (0 << OCIE2B) | (0 << OCIE2A) | (0 << TOIE2);
@@ -195,24 +195,6 @@ void init()
 	// USART disabled
 	UCSR0B = (0 << RXCIE0) | (0 << TXCIE0) | (0 << UDRIE0) | (0 << RXEN0)
 			| (0 << TXEN0) | (0 << UCSZ02) | (0 << RXB80) | (0 << TXB80);
-
-//	// Analog Comparator initialization
-//	// Analog Comparator: Off
-//	// The Analog Comparator's positive input is
-//	// connected to the AIN0 pin
-//	// The Analog Comparator's negative input is
-//	// connected to the AIN1 pin
-//	ACSR = (1 << ACD) | (0 << ACBG) | (0 << ACO) | (0 << ACI) | (0 << ACIE)
-//			| (0 << ACIC) | (0 << ACIS1) | (0 << ACIS0);
-//	ADCSRB = (0 << ACME);
-//	// Digital input buffer on AIN0: On
-//	// Digital input buffer on AIN1: On
-//	DIDR1 = (0 << AIN0D) | (0 << AIN1D);
-//
-//	// ADC initialization
-//	// ADC disabled
-//	ADCSRA = (0 << ADEN) | (0 << ADSC) | (0 << ADATE) | (0 << ADIF)
-//			| (0 << ADIE) | (0 << ADPS2) | (0 << ADPS1) | (0 << ADPS0);
 
 	// SPI initialization
 	// SPI disabled
@@ -252,13 +234,13 @@ int main()
 
 			if (isInverse())
 			{
-				TCCR0A |= (1 << COM0A0) | (1 << COM0B0);
-				TCCR2A |= (1 << COM2A0) | (1 << COM2B0);
+				TCCR0A |= ((1 << COM0A0) | (1 << COM0B0));
+				TCCR2A |= ((1 << COM2A0) | (1 << COM2B0));
 			}
 			else
 			{
-				TCCR0A &= ~(0 << COM0A0) | (0 << COM0B0);
-				TCCR2A &= ~(0 << COM2A0) | (0 << COM2B0);
+				TCCR0A &= ~((0 << COM0A0) | (0 << COM0B0));
+				TCCR2A &= ~((0 << COM2A0) | (0 << COM2B0));
 			}
 
 		}
