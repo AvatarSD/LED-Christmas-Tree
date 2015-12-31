@@ -13,7 +13,7 @@
 #include "ADC/Analog.h"
 #include "UART/UART.h"
 
-#define  MAX_VAL 5000
+#define MIN_TIMER 50
 
 UART * _port;
 
@@ -34,28 +34,28 @@ ISR(TIMER1_CAPT_vect)
 // Place your code here
 	cli();
 	counter++;
-	if(counter>=MAX_VAL)counter = 0;
+	//if(counter>=MAX_VAL)counter = 0;
 	sei();
 }
 
-inline void setOutA(uint16_t pwm)
+inline void setOutA(uint8_t pwm)
 {
-	OCR0A = (uint8_t) (pwm / 0xff);
+	OCR0A = pwm;
 }
 
-inline void setOutB(uint16_t pwm)
+inline void setOutB(uint8_t pwm)
 {
-	OCR0B = (uint8_t) (pwm / 0xff);
+	OCR0B = pwm;
 }
 
-inline void setOutC(uint16_t pwm)
+inline void setOutC(uint8_t pwm)
 {
-	OCR2B = (uint8_t) (pwm / 0xff);
+	OCR2B = pwm;
 }
 
-void calcPhase(uint16_t value, uint16_t level)
+void calcPhase(uint8_t value, uint8_t level)
 {
-//	double lev = ((double) level * 2 / (sizeof(level) * 8)) - 1;
+	double lev = ((double) level * 2 / (sizeof(level) * 8)) - 1;
 //
 //	setOutA((sin((value * M_PI) / (sizeof(value) * 8)) + lev)
 //			/ (2 * (sizeof(value) * 8)));
@@ -64,9 +64,11 @@ void calcPhase(uint16_t value, uint16_t level)
 //	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + (2 * M_PI) / 3)
 //			+ lev) / (2 * (sizeof(value) * 8)));
 
-	setOutA((sin(((double) value * M_PI) / 0xffff) + 1) * 0xffff);
-	setOutB(counter);
-	setOutC(value);
+	setOutA((sin((((double) value * M_PI * 2) / 0xff)) + 1) * 0x7f);
+	setOutB((sin((((double) value * M_PI * 2) / 0xff) + M_PI / 3) + 1) * 0x7f);
+	setOutC((sin((((double) value * M_PI * 2) / 0xff) + 2 * M_PI / 3) + 1) * 0x7f);
+//	setOutB(counter);
+//	setOutC(value);
 }
 
 void init()
@@ -218,21 +220,26 @@ int main()
 {
 	init();
 
-	UART port(UDR0,115200, 128,8);
+	UART port(UDR0, 115200, 128, 8);
 	_port = &port;
 
 	char buff[150];
 
 	while (true)
 	{
-		ICR1 = analog[0] * 64;
-		calcPhase(analog[0] * 64, analog[1] * 64);
+		uint16_t tim = analog[0] * 64;
+		if (tim < MIN_TIMER)
+			tim = MIN_TIMER;
+		ICR1 = tim;
+
+		calcPhase(counter, analog[1] / 4);
 //		setOutA(0x4fff);//analog[0]*64);
 //		setOutB(0x7fff);//analog[1]*64);
 //		setOutC(analog[0]*64);
 		sprintf(buff,
-				"ICR: %ud, cont: %ud, ang0: %ud, ang1: %ud, A: %ud, B: %ud, C: %ud\r\n",
-				ICR1, counter, analog[0], analog[1], OCR0A, OCR0B, OCR2B);
+				"ICR: %u,\t cont: %u,\t ang0: %u, ang1: %u, A: %u, B: %u, C: %u\r\n",
+				ICR1, counter, analog[0] / 4, analog[1] / 4, OCR0A, OCR0B,
+				OCR2B);
 		port(buff);
 	}
 	return 0;
