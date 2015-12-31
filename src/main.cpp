@@ -11,8 +11,6 @@
 
 #include "ADC/Analog.h"
 
-#define pi 3.1415
-
 uint16_t counter = 0;
 
 // Timer1 input capture interrupt service routine
@@ -24,28 +22,28 @@ counter++;
 
 inline void setOutA(uint16_t pwm)
 {
-	OCR0A = (uint8_t) (pwm >> 8);
+	OCR0A = (uint8_t) (pwm / 0xff);
 }
 
 inline void setOutB(uint16_t pwm)
 {
-	OCR0B = (uint8_t) (pwm >> 8);
+	OCR0B = (uint8_t) (pwm / 0xff);
 }
 
 inline void setOutC(uint16_t pwm)
 {
-	OCR2A = (uint8_t) (pwm >> 8);
+	OCR2B = (uint8_t) (pwm / 0xff);
 }
 
 void calcPhase(uint16_t value, uint16_t level)
 {
 	double lev = ((double) level * 2 / (sizeof(level) * 8)) - 1;
 
-	setOutA((sin((value * pi) / (sizeof(value) * 8)) + lev)
+	setOutA((sin((value * M_PI) / (sizeof(value) * 8)) + lev)
 			/ (2 * (sizeof(value) * 8)));
-	setOutA((sin(((value * pi) / (sizeof(value) * 8)) + pi / 3) + lev)
+	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + M_PI / 3) + lev)
 			/ (2 * (sizeof(value) * 8)));
-	setOutA((sin(((value * pi) / (sizeof(value) * 8)) + (2 * pi) / 3)
+	setOutA((sin(((value * M_PI) / (sizeof(value) * 8)) + (2 * M_PI) / 3)
 			+ lev) / (2 * (sizeof(value) * 8)));
 
 }
@@ -162,23 +160,23 @@ void init()
 	UCSR0B = (0 << RXCIE0) | (0 << TXCIE0) | (0 << UDRIE0) | (0 << RXEN0)
 			| (0 << TXEN0) | (0 << UCSZ02) | (0 << RXB80) | (0 << TXB80);
 
-	// Analog Comparator initialization
-	// Analog Comparator: Off
-	// The Analog Comparator's positive input is
-	// connected to the AIN0 pin
-	// The Analog Comparator's negative input is
-	// connected to the AIN1 pin
-	ACSR = (1 << ACD) | (0 << ACBG) | (0 << ACO) | (0 << ACI) | (0 << ACIE)
-			| (0 << ACIC) | (0 << ACIS1) | (0 << ACIS0);
-	ADCSRB = (0 << ACME);
-	// Digital input buffer on AIN0: On
-	// Digital input buffer on AIN1: On
-	DIDR1 = (0 << AIN0D) | (0 << AIN1D);
-
-	// ADC initialization
-	// ADC disabled
-	ADCSRA = (0 << ADEN) | (0 << ADSC) | (0 << ADATE) | (0 << ADIF)
-			| (0 << ADIE) | (0 << ADPS2) | (0 << ADPS1) | (0 << ADPS0);
+//	// Analog Comparator initialization
+//	// Analog Comparator: Off
+//	// The Analog Comparator's positive input is
+//	// connected to the AIN0 pin
+//	// The Analog Comparator's negative input is
+//	// connected to the AIN1 pin
+//	ACSR = (1 << ACD) | (0 << ACBG) | (0 << ACO) | (0 << ACI) | (0 << ACIE)
+//			| (0 << ACIC) | (0 << ACIS1) | (0 << ACIS0);
+//	ADCSRB = (0 << ACME);
+//	// Digital input buffer on AIN0: On
+//	// Digital input buffer on AIN1: On
+//	DIDR1 = (0 << AIN0D) | (0 << AIN1D);
+//
+//	// ADC initialization
+//	// ADC disabled
+//	ADCSRA = (0 << ADEN) | (0 << ADSC) | (0 << ADATE) | (0 << ADIF)
+//			| (0 << ADIE) | (0 << ADPS2) | (0 << ADPS1) | (0 << ADPS0);
 
 	// SPI initialization
 	// SPI disabled
@@ -201,8 +199,11 @@ int main()
 
 	while (true)
 	{
-		ICR1 = analog[0]*64;
-		calcPhase(counter, analog[1]*64);
+		//ICR1 = analog[0]*64;
+		calcPhase(analog[0]*64/*counter*/, analog[1]*64);
+//		setOutA(0x4fff);//analog[0]*64);
+//		setOutB(0x7fff);//analog[1]*64);
+//		setOutC(analog[0]*64);
 	}
 	return 0;
 }
