@@ -27,22 +27,37 @@ ISR(USART_TX_vect)
 }
 #endif
 
-register uint16_t counter asm("r4") ;
+register uint16_t counter asm("r4");
 
+bool isInverse()
+{
+	return (PIND >> 7) && 0x01;
+}
+
+bool isReverse()
+{
+	return (PINB >> 0) && 0x01;
+}
 
 inline void setOutA(uint16_t pwm)
 {
-	OCR0A = pwm/0xff;
+	OCR0A = pwm / 0xff;
 }
 
 inline void setOutB(uint16_t pwm)
 {
-	OCR0B = pwm/0xff;
+	if (isReverse())
+		OCR0B = pwm / 0xff;
+	else
+		OCR2B = pwm / 0xff;
 }
 
 inline void setOutC(uint16_t pwm)
 {
-	OCR2B = pwm/0xff;
+	if (isReverse())
+		OCR2B = pwm / 0xff;
+	else
+		OCR0B = pwm / 0xff;
 }
 
 void calcPhase(uint16_t value, uint16_t level)
@@ -78,7 +93,7 @@ void init()
 			| (0 << DDB2) | (0 << DDB1) | (0 << DDB0);
 	// State: Bit7=T Bit6=T Bit5=T Bit4=T Bit3=0 Bit2=T Bit1=T Bit0=T
 	PORTB = (0 << PORTB7) | (0 << PORTB6) | (0 << PORTB5) | (0 << PORTB4)
-			| (0 << PORTB3) | (0 << PORTB2) | (0 << PORTB1) | (0 << PORTB0);
+			| (0 << PORTB3) | (0 << PORTB2) | (0 << PORTB1) | (1 << PORTB0);
 
 	// Port C initialization
 	// Function: Bit6=In Bit5=In Bit4=In Bit3=In Bit2=In Bit1=In Bit0=In
@@ -90,7 +105,7 @@ void init()
 
 	// Port D initialization
 	// Function: Bit7=In Bit6=Out Bit5=Out Bit4=In Bit3=Out Bit2=In Bit1=In Bit0=In
-	DDRD = (0 << DDD7) | (1 << DDD6) | (1 << DDD5) | (0 << DDD4) | (1 << DDD3)
+	DDRD = (1 << DDD7) | (1 << DDD6) | (1 << DDD5) | (0 << DDD4) | (1 << DDD3)
 			| (0 << DDD2) | (0 << DDD1) | (0 << DDD0);
 	// State: Bit7=T Bit6=0 Bit5=0 Bit4=T Bit3=0 Bit2=T Bit1=T Bit0=T
 	PORTD = (0 << PORTD7) | (0 << PORTD6) | (0 << PORTD5) | (0 << PORTD4)
@@ -227,11 +242,26 @@ int main()
 	while (true)
 	{
 
-		uint16_t MAX_COUNTER = 0x1fff - (analog[0]*8);
+		uint16_t MAX_COUNTER = 0x1fff - (analog[0] * 8);
 
-		calcPhase((uint16_t)(((uint32_t)counter*0xffff)/MAX_COUNTER), analog[1] * 64);
-		if(counter++ >= MAX_COUNTER) counter = 0;
+		calcPhase((uint16_t) (((uint32_t) counter * 0xffff) / MAX_COUNTER),
+				analog[1] * 64);
+		if (counter++ >= MAX_COUNTER)
+		{
+			counter = 0;
 
+			if (isInverse())
+			{
+				TCCR0A |= (1 << COM0A0) | (1 << COM0B0);
+				TCCR2A |= (1 << COM2A0) | (1 << COM2B0);
+			}
+			else
+			{
+				TCCR0A &= ~(0 << COM0A0) | (0 << COM0B0);
+				TCCR2A &= ~(0 << COM2A0) | (0 << COM2B0);
+			}
+
+		}
 
 #if USE_SERIAL
 		sprintf(buff,
