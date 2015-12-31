@@ -13,10 +13,11 @@
 #include "ADC/Analog.h"
 #include "UART/UART.h"
 
-#define MIN_TIMER 50
+#define MIN_TIMER 30
+#define USE_SERIAL 0
 
+#if USE_SERIAL
 UART * _port;
-
 ISR(USART_RX_vect)
 {
 	_port->rx_byte_int();
@@ -25,6 +26,7 @@ ISR(USART_TX_vect)
 {
 	_port->tx_byte_int();
 }
+#endif
 
 uint8_t counter = 0;
 
@@ -226,25 +228,29 @@ int main()
 {
 	init();
 
+#if USE_SERIAL
 	UART port(UDR0, 115200, 128, 8);
 	_port = &port;
-
 	char buff[150];
+#endif
 
 	while (true)
 	{
-		uint16_t tim = analog[0] * 64;
+		uint16_t tim = 0x3ff / analog[0];
 		if (tim < MIN_TIMER)
 			tim = MIN_TIMER;
 		ICR1 = tim;
 
 		calcPhase(counter, analog[1] / 4);
 
+#if USE_SERIAL
 		sprintf(buff,
 				"ICR: %u,\t cont: %u,\t ang0: %u, ang1: %u, A: %u, B: %u, C: %u\r\n",
 				ICR1, counter, analog[0] / 4, analog[1] / 4, OCR0A, OCR0B,
 				OCR2B);
 		port(buff);
+#endif
+
 	}
 	return 0;
 }
