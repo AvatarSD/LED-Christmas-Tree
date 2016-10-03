@@ -30,12 +30,12 @@ void Analog::begin()
 	// ADC Auto Trigger Source: Free Running
 	// Digital input buffers on ADC0: On, ADC1: On, ADC2: On, ADC3: On
 	// ADC4: On, ADC5: On
-	DIDR0 = (0 << ADC5D) | (0 << ADC4D) | (0 << ADC3D) | (0 << ADC2D)
-			| (0 << ADC1D) | (0 << ADC0D);
+//	DIDR0 = (0 << ADC5D) | (0 << ADC4D) | (0 << ADC3D) | (0 << ADC2D)
+//			| (0 << ADC1D) | (0 << ADC0D);
 	ADMUX = FIRST_ADC_INPUT | ADC_VREF_TYPE;
-	ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADATE) | (0 << ADIF)
+	ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADFR) | (0 << ADIF)
 			| (1 << ADIE) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
-	ADCSRB = (0 << ADTS2) | (0 << ADTS1) | (0 << ADTS0);
+//	ADCSRB = (0 << ADTS2) | (0 << ADTS1) | (0 << ADTS0);
 
 	// Analog Comparator: Off
 	ACSR = (1 << ACD);
@@ -54,7 +54,7 @@ void Analog::ADCint()
 		input_index = 0;
 	ADMUX = (FIRST_ADC_INPUT | ADC_VREF_TYPE) + input_index;
 	// Delay needed for the stabilization of the ADC input voltage
-	//_delay_us(10);
+	_delay_us(10);
 	// Start the AD conversion
 	ADCSRA |= (1 << ADSC);
 }
